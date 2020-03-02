@@ -56,12 +56,20 @@ def add_connections(num):
 	while not nx.is_connected(G):
 		add_connection(num)
 
+def repeat_multiple_times(number_of_nodes):
+	repeat = number_of_nodes - 1
+	res = 0
+	for x in range(0, repeat):
+		create_graph(number_of_nodes)
+		create_list(number_of_nodes)
+		add_connections(number_of_nodes)
+		graph_size = G.number_of_edges()
+		res = res + graph_size / repeat
+	return res
+
 for x in X:
-	create_graph(x)
-	create_list(x)
-	add_connections(x)
-	graph_size = G.number_of_edges()
-	Y.append(graph_size)
+	res = repeat_multiple_times(x)
+	Y.append(res)
 
 def generateGraph(X, Y):
     plt.plot(X, Y)
