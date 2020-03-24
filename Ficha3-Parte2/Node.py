@@ -44,10 +44,21 @@ class EagerLazy(Node):
             res = self.handleLazy(source, msg)
         elif msg[0] == "request":
             res = self.handleRequest(source, msg)
+        elif msg[0] == "lazy":
+            res = self.handleLazy(source, msg)
 
         return res
 
     def handleLazy(self, source, msg):
+        id = msg[1][0]
+        res = []
+        if id in self.data.keys():
+            return []
+        message = ("schedule", (id, source))
+        res.append((message, msg[1][1]))
+        return res
+
+    def handleSchedule(self, source, msg):
         id = msg[1][0]
         res = []
         if id in self.data.keys():
@@ -71,7 +82,7 @@ class EagerLazy(Node):
         lazy = [x for x in self.neighbords if x not in rand_nei]
 
         for neighbor in lazy:
-            message = ("schedule", (id, source))
+            message = ("lazy", (id, source))
             res.append((message, neighbor))
 
         self.data[id] = msg[1][1]

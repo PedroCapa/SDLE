@@ -55,16 +55,20 @@ class Sim:
         events = node.handle(node.name, message)
         for (msg, neighbor) in events:
             if msg[0] == "schedule":
-                event = (self.timeout + self.time, (node.name, neighbor, msg))
-                self.pending.append(event)
+                schedule = (self.timeout + self.time, (node.name, neighbor, msg))
+                self.pending.append(schedule)
             elif msg[0] == "event":
                 distance = self.distances[(node.name, neighbor)]
                 event = (distance + self.time, (node.name, neighbor, msg))
                 self.pending.append(event)
+            elif msg[0] == "lazy":
+                distance = self.distances[(node.name, neighbor)]
+                lazy = (distance + self.time, (node.name, neighbor, msg))
+                self.pending.append(lazy)
             else:
                 distance = self.distances[(node.name, neighbor)]
-                event = (distance + self.time, (node.name, neighbor, msg))
-                self.pending.append(event)
+                request = (distance + self.time, (node.name, neighbor, msg))
+                self.pending.append(request)
 
     def run_loop(self):
         while(len(self.pending) > 0):
