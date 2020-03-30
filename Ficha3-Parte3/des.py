@@ -118,3 +118,7 @@ class Sim:
                 self.visitar.remove(src)
             # Atualizar a lista de eventos
             self.generate_events(node, src, msg)
+            
+            for event in self.pending:
+                print(event)
+            print('-----------------------------------')
