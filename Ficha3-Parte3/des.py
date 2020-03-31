@@ -27,19 +27,14 @@ class Sim:
         self.timeout = timeout
         self.pending = []  # lista de eventos
         # [(delay, (src, dst, msg))]
-        self.visitar = self.full_vis()
         self.seed = seed
         self.gc_time = gc_time
 
-    def full_vis(self):
-        vis = []
-        for node in self.nodes:
-            name = node.name
-            vis.append(name)
-        return vis
-
     def start(self):
         self.start_events()
+        for event in self.pending:
+            print(event)
+        print('-----------------------------------')
         self.run_loop()
 
     def start_events(self):
@@ -51,6 +46,12 @@ class Sim:
             now = datetime.now()
             message = ("event", (x, now.strftime("%d/%m/%Y %H:%M:%S")))
             self.generate_start_events(node, message)
+
+    def only_node_connector(self, node):
+        for event in self.pending:
+            if event[1][2][0] == "collector" and event[1][1] == node:
+                return False
+        return True
 
     def generate_events(self, node, previous, message):
         events = node.handle(node.name, previous, message)
@@ -67,8 +68,9 @@ class Sim:
                 lazy = (distance + self.time, (node.name, neighbor, msg))
                 self.pending.append(lazy)
             elif msg[0] == "collector":
-                collector = (self.time + self.gc_time, (node.name, neighbor, msg))
-                self.pending.append(collector)
+                if self.only_node_connector(neighbor):
+                    collector = (self.time + self.gc_time, (node.name, neighbor, msg))
+                    self.pending.append(collector)
             elif msg[0] == "ack":
                 distance = self.distances[(node.name, neighbor)]
                 ack = (distance + self.time, (node.name, neighbor, msg))
@@ -93,8 +95,9 @@ class Sim:
                 lazy = (distance + self.time, (node.name, neighbor, msg))
                 self.pending.append(lazy)
             elif msg[0] == "collector":
-                collector = (self.time + self.gc_time, (node.name, neighbor, msg))
-                self.pending.append(collector)
+                if self.only_node_connector(node.name):
+                    collector = (self.time + self.gc_time, (node.name, neighbor, msg))
+                    self.pending.append(collector)
             elif msg[0] == "ack":
                 distance = self.distances[(node.name, neighbor)]
                 ack = (distance + self.time, (node.name, neighbor, msg))
@@ -114,8 +117,6 @@ class Sim:
             self.time = delay
             # Correr o handle do nodo (return (msg, [id]))
             node = self.nodes[dst]
-            if src in self.visitar:
-                self.visitar.remove(src)
             # Atualizar a lista de eventos
             self.generate_events(node, src, msg)
             

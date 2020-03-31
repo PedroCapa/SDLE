@@ -55,100 +55,100 @@ class EagerLazy(Node):
 
         return res
 
+    def send_ack(self, id, source, res):
+        for recv in self.recv[id]:
+            message = ("ack", (id, source))
+            res.append((message, recv))
+        return res
+
     def add_recv(self, id, previous):
-        if id in self.recv:
-            self.recv[id].append(previous)
-        else:
+        if id not in self.recv:
             self.recv[id] = []
+            self.recv[id].append(previous)
+        elif previous not in self.recv[id]:
             self.recv[id].append(previous)
 
     def handleLazy(self, source, previous, msg):
         id = msg[1][0]
         res = []
         self.add_recv(id, previous)
-        message = ("ack", (id, source))
-        res.append((message, previous))
-
-        if id in self.data.keys():
-            return res
-
-        message = ("schedule", (id, source))
-        res.append((message, msg[1][1]))
+        if id not in self.data.keys():
+            message = ("schedule", (id, previous))
+            res.append((message, source))
         return res
 
     def handleSchedule(self, source, previous, msg):
         id = msg[1][0]
         res = []
-
-        if id in self.data.keys():
-            return res
-        
-        message = ("request", (id, source))
-        res.append((message, msg[1][1]))
+        if id not in self.data.keys():
+            message = ("request", (id, source))
+            res.append((message, msg[1][1]))
         return res
 
     def handleEager(self, source, previous, msg):
         res = []
         id = msg[1][0]
         self.add_recv(id, previous)
-        rand_nei = self.getRandomNeighbors(previous, id)
+        res = self.send_ack(id, source, res)
+        # enviar um ACK só para garantir que o emissor saiba que recebeu o payload
         if id in self.data.keys():
-            return []
+            return res
+
+        # criar a lista de nodos que está à espera o ACK, se ainda não tiver sido criada
+        if id not in self.ack:
+            self.ack[id] = []
 
         # gerar mensagens eager para fanout vizinhos
+        rand_nei = self.getRandomNeighbors(previous, id)
         for neighbor in rand_nei:
             now = datetime.now()
             message = ("event", (id, now.strftime("%d/%m/%Y %H:%M:%S")))
             res.append((message, neighbor))
+            self.ack[id].append(neighbor)
 
         # gerar mensagens lazy para os restantes vizinhos
+        # substituir este bocado por uma função, para ser mais percetível
         aux = [x for x in self.neighbords if x not in rand_nei]
         aux = [x for x in aux if x not in self.recv[id]]
         lazy = aux.copy()
-
         if previous in lazy:
             lazy.remove(previous)
 
         for neighbor in lazy:
             message = ("lazy", (id, source))
             res.append((message, neighbor))
+            self.ack[id].append(neighbor)
 
         # gerar evento GC para verificar se todos ja receberam o conteudo da mensagem
-        message = ("collector", (id, source))
-        res.append((message, source))
-        self.ack[id] = self.neighbords.copy().remove(previous)
-        self.data[id] = msg[1][1]
-
-        message = ("ack", (id, source))
+        message = ("collector", (id, previous))
         res.append((message, previous))
+        self.data[id] = msg[1][1]
         return res
 
     def handleStartEager(self, source, msg):
         res = []
         rand_nei = self.getRandomNeighborsStart()
         id = msg[1][0]
-        if id in self.data.keys():
-            return []
-
-        self.ack[id] = self.neighbords.copy()
+        self.ack[id] = []
+        self.data[id] = msg[1][1]
 
         # gerar mensagens eager para fanout vizinhos
         for neighbor in rand_nei:
             now = datetime.now()
             message = ("event", (id, now.strftime("%d/%m/%Y %H:%M:%S")))
             res.append((message, neighbor))
+            self.ack[id].append(neighbor)
 
         # gerar mensagens lazy para os restantes vizinhos
         lazy = [x for x in self.neighbords if x not in rand_nei]
         for neighbor in lazy:
             message = ("lazy", (id, source))
             res.append((message, neighbor))
+            self.ack[id].append(neighbor)
 
         # gerar evento GC para verificar se todos ja receberam o conteudo da mensagem
         message = ("collector", (id, source))
         res.append((message, source))
-
-        self.data[id] = msg[1][1]
         return res
 
 
@@ -163,7 +163,7 @@ class EagerLazy(Node):
         id = msg[1][0]
         res = []
         # apagar o conteúdo da mensagem
-        if self.ack[id] is None:
+        if (self.ack[id] is None) or len(self.ack[id]) == 0:
             del self.ack[id]
             del self.data[id]
         # enviar eager para os vizinhos que não recebeu o ACK
@@ -171,13 +171,13 @@ class EagerLazy(Node):
             for neighbor in self.ack[id]:
                 message = ("event", (id, self.data[id]))
                 res.append((message, neighbor))
-            message = ("collector", (id, source))
+            message = ("collector", (id, self.name))
             res.append((message, self.name))
         return res
 
     def handleAck(self, source, previous, msg):
         id = msg[1][0]
-        if (self.ack[id] is not None) and id in self.ack[id]:
+        if (self.ack[id] is not None) and (previous in self.ack[id]):
             self.ack[id].remove(previous)
         return []
 
@@ -185,12 +185,11 @@ class EagerLazy(Node):
         aux = [x for x in self.neighbords if x not in self.recv[id]]
         if src in aux:
             aux.remove(src)
-        if self.fanout >= len(self.neighbords):
+        if self.fanout >= len(aux):
             return aux
         return random.sample(aux, self.fanout)
 
     def getRandomNeighborsStart(self):
-        aux = self.neighbords.copy()
         if self.fanout >= len(self.neighbords):
-            return aux
-        return random.sample(aux, self.fanout)
+            return self.neighbords
+        return random.sample(self.neighbords, self.fanout)
