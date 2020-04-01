@@ -34,8 +34,11 @@ class EagerLazy(Node):
         self.name = name
         self.neighbords = neighbords
         self.fanout = fanout
+        # payload
         self.data = {}
+        # dicionário de nodos que está à espera de receber o ack
         self.ack = {}
+        # dicionário de nodos que recebeu o payload
         self.recv = {}
 
     def handle(self, source, previous, msg):
@@ -177,7 +180,7 @@ class EagerLazy(Node):
 
     def handleAck(self, source, previous, msg):
         id = msg[1][0]
-        if (self.ack[id] is not None) and (previous in self.ack[id]):
+        if (id in self.ack) and (self.ack[id] is not None) and (previous in self.ack[id]):
             self.ack[id].remove(previous)
         return []
 

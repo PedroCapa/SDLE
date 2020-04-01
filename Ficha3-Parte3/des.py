@@ -17,10 +17,21 @@ def min_delay(pending):
     return min_event
 
 
+def simulate_random_loss(next_event, probability = 1):
+    (_, (_, _, msg)) = next_event
+    type = msg[0]
+    # in case the message has one of the follwing types, there's a chance of loss
+    if type == "event" or type == "ack" or type == "lazy" or type == "request":
+        rand = random.uniform(0, 1)
+        return rand < probability
+    # case its a schedule or collector, the event will allways going to happen
+    return True
+    
+
 class Sim:
     # nodes é uma lista com os nodos
     # distances é um Map {(0, 1): 100, (1,2): 23} origem, destino e distancia
-    def __init__(self, nodes, distances, timeout, seed, gc_time):
+    def __init__(self, nodes, distances, timeout, seed, gc_time, probability):
         self.nodes = nodes
         self.distances = distances
         self.time = 0
@@ -29,6 +40,7 @@ class Sim:
         # [(delay, (src, dst, msg))]
         self.seed = seed
         self.gc_time = gc_time
+        self.probability = probability
 
     def start(self):
         self.start_events()
@@ -118,7 +130,8 @@ class Sim:
             # Correr o handle do nodo (return (msg, [id]))
             node = self.nodes[dst]
             # Atualizar a lista de eventos
-            self.generate_events(node, src, msg)
+            if simulate_random_loss(next_event, self.probability):
+                self.generate_events(node, src, msg)
             
             for event in self.pending:
                 print(event)
