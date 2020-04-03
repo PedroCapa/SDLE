@@ -17,17 +17,6 @@ def min_delay(pending):
     return min_event
 
 
-def simulate_random_loss(next_event, probability = 1):
-    (_, (_, _, msg)) = next_event
-    type = msg[0]
-    # in case the message has one of the follwing types, there's a chance of loss
-    if type == "event" or type == "ack" or type == "lazy" or type == "request":
-        rand = random.uniform(0, 1)
-        return rand < probability
-    # case its a schedule or collector, the event will allways going to happen
-    return True
-    
-
 class Sim:
     # nodes é uma lista com os nodos
     # distances é um Map {(0, 1): 100, (1,2): 23} origem, destino e distancia
@@ -41,12 +30,10 @@ class Sim:
         self.seed = seed
         self.gc_time = gc_time
         self.probability = probability
+        self.missess = 0
 
     def start(self):
         self.start_events()
-        for event in self.pending:
-            print(event)
-        print('-----------------------------------')
         self.run_loop()
 
     def start_events(self):
@@ -64,9 +51,14 @@ class Sim:
             if event[1][2][0] == "collector" and event[1][1] == node:
                 return False
         return True
+    
+    def update_missess(self, message, events = []):
+        if message[0] == "collector":
+            self.missess = self.missess + len(events)
 
     def generate_events(self, node, previous, message):
         events = node.handle(node.name, previous, message)
+        self.update_missess(message, events)
         for (msg, neighbor) in events:
             if msg[0] == "schedule":
                 schedule = (self.timeout + self.time, (node.name, neighbor, msg))
@@ -130,9 +122,4 @@ class Sim:
             # Correr o handle do nodo (return (msg, [id]))
             node = self.nodes[dst]
             # Atualizar a lista de eventos
-            if simulate_random_loss(next_event, self.probability):
-                self.generate_events(node, src, msg)
-            
-            for event in self.pending:
-                print(event)
-            print('-----------------------------------')
+            self.generate_events(node, src, msg)
