@@ -54,6 +54,20 @@ class Sim:
         print('-----------------------------------')
         self.run_loop()
 
+    def is_over(self):
+        for id in range(self.seed):
+            flag = self.is_id_over(id)
+            if not flag:
+                return True
+        return False
+
+    def is_id_over(self, id):
+        for node in self.nodes:
+            for value in node.info.values():
+                if id not in value:
+                    return False
+        return True
+
     def start_events(self):
         # random root
         size = len(self.nodes)
@@ -199,7 +213,7 @@ class Sim:
 
     def run_loop(self):
         self.time = 1
-        while(len(self.pending) > 0):
+        while(len(self.pending) > 0 and self.is_over()):
             # change the graph structure
             self.regenarete_graph()
             # encontrar o evento com o menor delay

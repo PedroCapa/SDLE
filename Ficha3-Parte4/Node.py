@@ -202,7 +202,7 @@ class EagerLazy(Node):
             message = ("wehave", self.info, source)
             res.append((message, nei))
         
-        flag = self.gerbage_collector()
+        self.gerbage_collector()
         message = "knowledge"
         res.append((message, source))
         return res

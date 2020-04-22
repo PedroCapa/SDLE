@@ -4,7 +4,7 @@ import des
 import numpy as np
 
 n = 10
-m = 10
+m = 1
 timeout = 3
 distance = 1
 seed = 1
