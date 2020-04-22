@@ -30,7 +30,7 @@ class RandomGraph:
 
 	def multiple_times(self, n):
 		res = 0
-		for i in range(0,n):
+		for _ in range(0,n):
 			self.create_graph()
 			self.add_connections()
 			res = res + len(self.graph.edges)

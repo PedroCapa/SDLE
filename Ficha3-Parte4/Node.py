@@ -7,26 +7,6 @@ from datetime import datetime
 class Node:
     def handle(self, source, msg):
         pass
-        # return novas mensagens
-
-
-class Broadcast(Node):
-    def __init__(self, name, neighbords):
-        self.name = name
-        self.neighbords = neighbords
-        self.fanout = 50
-
-    def handle(self, source, msg):
-        res = []
-        for neighbor in self.neighbords:
-            res.append((msg, neighbor))
-        return res
-        # return novas mensagens
-
-    def getRandomNeighbors(self):
-        if self.fanout >= len(self.neighbords):
-            return self.neighbords
-        return random.sample(self.neighbords, self.fanout)
 
 
 class EagerLazy(Node):
@@ -38,9 +18,9 @@ class EagerLazy(Node):
         self.data = {}
         # dicionario que contem informação acerca dos vizinhos que receberam
         self.info = {}
-        for proc in processes:
-            self.info[proc] = set()
-
+        for process in processes:
+            self.info[process] = set()
+    
 
     def handle(self, source, msg):
 
@@ -66,12 +46,12 @@ class EagerLazy(Node):
         id = msg[2][0]
         previous = msg[1]
         payload = msg[2][1]
-        # Verifica se já tem o payload
-        if id in self.data.keys():
-            return res
 
         self.info[source].add(id)
         self.info[previous].add(id)
+        # Verifica se já tem o payload
+        if id in self.data.keys():
+            return res
         self.data[id] = payload
 
         # gerar mensagens eager para fanout vizinhos
@@ -81,9 +61,7 @@ class EagerLazy(Node):
             res.append((message, neighbor))
 
         # gerar mensagens lazy para os restantes vizinhos
-        # substituir este bocado por uma função, para ser mais percetível
-        lazy = [x for x in self.neighbords if x not in rand_nei]
-
+        lazy = [x for x in self.neighbords if x not in rand_nei and id not in self.info[x]]
         if previous in lazy:
             lazy.remove(previous)
 
@@ -125,7 +103,7 @@ class EagerLazy(Node):
     def handleSchedule(self, source, msg):
         id = msg[1]
         res = []
-        if id not in self.data.keys():
+        if id not in self.data.keys() and id not in self.info[source]:
             for neighbor in self.neighbords:
                 if id in self.info[neighbor]:
                     message = ("request", source, id)
@@ -139,8 +117,9 @@ class EagerLazy(Node):
         id = msg[2]
         dest = msg[1]
         res = []
-        message = ("gossip", source, (id, self.data[id]))
-        res.append((message, dest))
+        if dest in self.neighbords and id in self.data:
+            message = ("gossip", source, (id, self.data[id]))
+            res.append((message, dest))
         return res
 
     def handleIHave(self, source, msg):
@@ -183,24 +162,70 @@ class EagerLazy(Node):
     def handleWehave(self, source, msg):
         res = []
         new_info = msg[1]
-        # Depois responder a um WeHave se tivermos mais informação
+        # previous = msg[2]
+        # check if the actual node received a new ID
+        self.new_id(new_info, res, source)
+        # update the info about the system konwledge
+        self.update_system_info(new_info)
+        # check if the emitter has missing information and still is neighbor
+        # for now dont send to the neighbor if contains new information
+        # self.send_wehave_previous(previous, new_info, source, res)
+        return res
+
+    def send_wehave_previous(self, previous, new_info, source, res):
+        if previous in self.neighbords:
+            for (key, value) in new_info.items():
+                aux = self.info[key] - value
+                if aux:
+                    message = ("wehave", self.info, source)
+                    res.append((message, previous))
+                    break
+
+    def new_id(self, new_info, res, source):
+        my_ids = set()
+        new_ids = set()
+        for ids in self.info.values():
+            my_ids = my_ids.union(ids)
+        for ids in new_info.values():
+            new_ids = new_ids.union(ids)
+        if new_ids - my_ids:
+            message = "knowledge"
+            res.append((message, source))
+
+    def update_system_info(self, new_info):
         for (key, value) in new_info.items():
             self.info[key] = value.union(self.info[key])
-
-        for (message_id, _) in self.data.items():
-            aux = {k:v for (k, v) in self.info.items() if message_id in v}
-            if len(aux.keys()) == len(self.info.keys()):
-                del self.data[message_id]
-                break
-
-        return res
 
     def handleKnowledge(self, source, msg):
         res = []
         for nei in self.neighbords:
-            message = ("wehave", self.info)
+            message = ("wehave", self.info, source)
             res.append((message, nei))
-        # Deixar de enviar knowledge se soubermos tudo
+        
+        flag = self.gerbage_collector()
         message = "knowledge"
-        res.append((message, ''))
+        res.append((message, source))
         return res
+
+    def gerbage_collector(self):
+        flag = True
+        key = list(self.info.keys())[0]
+        aux = self.info[key].copy()
+        for (key, value) in self.info.items():
+            aux = aux.intersection(value)
+        for id in aux:
+            if id in self.data.keys():
+                flag = False
+                del self.data[id]
+        return flag
+
+    def new_knowladge(self, flag, res, source):
+        if flag:
+            message = "knowledge"
+            res.append((message, source))
+        else:
+            for (key, value) in self.info.items():
+                if len(value) > 0 and self.info[key].intersection(set(list(self.data.keys()))):
+                    message = "knowledge"
+                    res.append((message, source))
+                    break
