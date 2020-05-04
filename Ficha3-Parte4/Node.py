@@ -12,6 +12,7 @@ class Node:
 class EagerLazy(Node):
     def __init__(self, name, neighbords, processes, fanout):
         self.name = name
+        self.counter = 0
         self.neighbords = neighbords
         self.fanout = fanout
         # payload
@@ -20,7 +21,11 @@ class EagerLazy(Node):
         self.info = {}
         for process in processes:
             self.info[process] = set()
-    
+
+
+    def getCounterAndIncrement(self):
+        self.counter = self.counter + 1
+        return self.counter - 1
 
     def handle(self, source, msg):
 

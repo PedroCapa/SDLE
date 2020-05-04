@@ -46,6 +46,7 @@ class Sim:
         self.missess = 0
         self.know = know
         self.distance = distance
+        self.messagesId = []
 
     def start(self):
         self.start_events()
@@ -55,7 +56,7 @@ class Sim:
         self.run_loop()
 
     def is_over(self):
-        for id in range(self.seed):
+        for id in self.messagesId:
             flag = self.is_id_over(id)
             if not flag:
                 return True
@@ -71,11 +72,14 @@ class Sim:
     def start_events(self):
         # random root
         size = len(self.nodes)
-        for x in range(self.seed):
+        for _ in range(self.seed):
             key = random.randint(0, size - 1)
             node = self.nodes[key]
             now = datetime.now()
-            message = ("gossip", (x, now.strftime("%d/%m/%Y %H:%M:%S")))
+            # 
+            id = (node.name, node.getCounterAndIncrement())
+            self.messagesId.append(id)
+            message = ("gossip", (id, now.strftime("%d/%m/%Y %H:%M:%S")))
             self.generate_start_events(node, message)
         
         self.generate_start_background_events()
