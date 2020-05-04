@@ -52,8 +52,27 @@ class EagerLazy(Node):
         previous = msg[1]
         payload = msg[2][1]
 
+        #Acrescentar o atual e remover todos os inferiores
+        delete = []
         self.info[source].add(id)
+        for (name, index) in self.info[source]:
+            if name == id[0] and id[1] > index:
+                delete.append((name, index))
+
+        for (name, index) in delete:    
+            self.info[source].remove((name, index))
+
+        #Acrescentar o atual e remover todos os inferiores
+        delete = []
         self.info[previous].add(id)
+        for (name, index) in self.info[previous]:
+            if name == id[0] and id[1] > index:
+                delete.append((name, index))
+
+        for (name, index) in delete:    
+            self.info[previous].remove((name, index))
+
+
         # Verifica se já tem o payload
         if id in self.data.keys():
             return res
@@ -86,7 +105,14 @@ class EagerLazy(Node):
         id = msg[1][0]
         self.data[id] = msg[1][1]
 
+        delete = []
         self.info[source].add(id)
+        for (name, index) in self.info[source]:
+            if name == id[0] and id[1] > index:
+                delete.append((name, index))
+
+        for (name, index) in delete:    
+            self.info[source].remove((name, index))
 
         # gerar mensagens eager para fanout vizinhos
         for neighbor in rand_nei:
@@ -131,7 +157,17 @@ class EagerLazy(Node):
         id = msg[2]
         previous = msg[1]
         res = []
+        
+        delete = []
         self.info[previous].add(id)
+        for (name, index) in self.info[previous]:
+            if name == id[0] and id[1] > index:
+                delete.append((name, index))
+        
+        for (name, index) in delete:
+            self.info[previous].remove((name, index))
+
+
         if id not in self.data.keys():
             message = ("schedule", id)
             res.append((message, source))
