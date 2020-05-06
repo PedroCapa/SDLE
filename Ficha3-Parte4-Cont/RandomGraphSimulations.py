@@ -7,10 +7,10 @@ n = 10
 m = 1
 timeout = 3
 distance = 1
-seed = 4
+seed = 6
 gc_time = 5
 loss_probability = 0.9
-regenerate_graph_probability = 0.9
+regenerate_graph_probability = 0.99
 know = 10
 
 Y = list()

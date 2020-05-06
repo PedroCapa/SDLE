@@ -94,15 +94,15 @@ class Sim:
         self.pending.append(event)
 
 
-    def only_node_connector(self, node):
+    def only_node_connector(self, node, msg):
         for event in self.pending:
-            if event[1][2][0] == "collector" and event[1][1] == node:
+            if event[1][2][0] == "collector" and event[1][1] == node and event[1][2][1] == msg[1]:
                 return False
         return True
     
-    def only_node_schedule(self, node):
+    def only_node_schedule(self, node, msg):
         for event in self.pending:
-            if event[1][2][0] == "schedule" and event[1][1] == node:
+            if event[1][2][0] == "schedule" and event[1][1] == node and event[1][2][1] == msg[1]:
                 return False
         return True
 
@@ -161,7 +161,7 @@ class Sim:
         self.update_missess(message, events)
 
         for (msg, neighbor) in events:
-            if msg[0] == "schedule" and self.only_node_schedule(neighbor):
+            if msg[0] == "schedule" and self.only_node_schedule(neighbor, msg):
                 schedule = (self.timeout + self.time, (node.name, neighbor, msg))
                 self.pending.append(schedule)
             elif msg[0] == "gossip":
@@ -172,7 +172,7 @@ class Sim:
                 distance = self.distances[(node.name, neighbor)]
                 lazy = (distance + self.time, (node.name, neighbor, msg))
                 self.pending.append(lazy)
-            elif msg[0] == "collector" and self.only_node_connector(neighbor):
+            elif msg[0] == "collector" and self.only_node_connector(neighbor, msg):
                 collector = (self.time + self.gc_time, (node.name, neighbor, msg))
                 self.pending.append(collector)
             elif msg == "knowledge" and self.only_node_knowladge(neighbor):
@@ -190,7 +190,11 @@ class Sim:
         for node in self.nodes:
             print(str(node.name) + ": " + str(node.info))
         print('-----------------------------------')
-            
+        print('-----------------DATA------------')
+        for node in self.nodes:
+            print(str(node.name) + ':' + str(node.data))
+        print('-----------------------------------')
+
 
     def generate_start_events(self, node, message):
         events = node.handleStartEager(node.name, message)
@@ -207,7 +211,7 @@ class Sim:
                 lazy = (distance + self.time, (node.name, neighbor, msg))
                 self.pending.append(lazy)
             elif msg[0] == "collector":
-                if self.only_node_connector(node.name):
+                if self.only_node_connector(node.name, msg):
                     collector = (self.time + self.gc_time, (node.name, neighbor, msg))
                     self.pending.append(collector)
             else:
@@ -232,6 +236,7 @@ class Sim:
                 print(event)
             print('-----------------------------------')
             print(next_event)
+            print('-----------------------------------')
             if simulate_random_loss(next_event, self.loss_probability):
                 # Atualizar a lista de eventos
                 print("Mensagem entregue")

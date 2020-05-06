@@ -53,27 +53,23 @@ class EagerLazy(Node):
         payload = msg[2][1]
 
         #Acrescentar o atual e remover todos os inferiores
-        delete = []
         self.info[source].add(id)
-        for (name, index) in self.info[source]:
-            if name == id[0] and id[1] > index:
-                delete.append((name, index))
 
-        for (name, index) in delete:    
-            self.info[source].remove((name, index))
-
-        #Acrescentar o atual e remover todos os inferiores
-        delete = []
-        self.info[previous].add(id)
+        #Acrescentar se for superior em 1 unidade ao que temos ou tem indice 0
+        flag = False
+        contains = False
         for (name, index) in self.info[previous]:
-            if name == id[0] and id[1] > index:
-                delete.append((name, index))
+            if name == id[0]:
+                contains = True
+            if name == id[0] and index == id[1] - 1:
+                flag = True
+        if flag:
+            self.info[previous].remove((id[0], id[1] - 1))
+            self.info[previous].add(id)
+        elif id[1] == 0 and contains is False:
+            self.info[previous].add(id)
 
-        for (name, index) in delete:    
-            self.info[previous].remove((name, index))
-
-
-        # Verifica se já tem o payload
+        # Verifica se já tem o payload, se já tem ignora mensagem
         if id in self.data.keys():
             return res
         self.data[id] = payload
@@ -84,8 +80,20 @@ class EagerLazy(Node):
             message = ("gossip", source, (id, payload))
             res.append((message, neighbor))
 
-        # gerar mensagens lazy para os restantes vizinhos
-        lazy = [x for x in self.neighbords if x not in rand_nei and id not in self.info[x]]
+        # gerar mensagens lazy para os restantes vizinhos que n tem a informação
+        lazy = []
+        for neighbor in self.neighbords:
+            if neighbor  not in rand_nei:
+                flag = True
+                for (n,i) in self.info[neighbor]:
+                    if n == id[0] and i < id[1]:
+                        lazy.append(neighbor)
+                    elif n == id[0] and i >= id[1]:
+                        flag = False
+                if flag:
+                    lazy.append(neighbor)
+
+        #lazy = [x for x in self.neighbords if x not in rand_nei and id not in self.info[x]] #Mudar isto
         if previous in lazy:
             lazy.remove(previous)
 
@@ -104,15 +112,7 @@ class EagerLazy(Node):
         rand_nei = self.getRandomNeighborsStart()
         id = msg[1][0]
         self.data[id] = msg[1][1]
-
-        delete = []
         self.info[source].add(id)
-        for (name, index) in self.info[source]:
-            if name == id[0] and id[1] > index:
-                delete.append((name, index))
-
-        for (name, index) in delete:    
-            self.info[source].remove((name, index))
 
         # gerar mensagens eager para fanout vizinhos
         for neighbor in rand_nei:
@@ -131,15 +131,18 @@ class EagerLazy(Node):
         res.append((message, source))
         return res
 
+
     def handleSchedule(self, source, msg):
         id = msg[1]
         res = []
-        if id not in self.data.keys() and id not in self.info[source]:
+
+        if id not in self.info[source]:
             for neighbor in self.neighbords:
-                if id in self.info[neighbor]:
-                    message = ("request", source, id)
-                    res.append((message, neighbor))
-                    break
+                for (name, index) in self.info[neighbor]:
+                    if name == id[0] and index >= id[1]:
+                        message = ("request", source, id)
+                        res.append((message, neighbor))
+                        break
             message = ("schedule", id)
             res.append((message, source))
         return res
@@ -157,18 +160,21 @@ class EagerLazy(Node):
         id = msg[2]
         previous = msg[1]
         res = []
-        
-        delete = []
-        self.info[previous].add(id)
+
+        flag = False
+        contains = False
         for (name, index) in self.info[previous]:
-            if name == id[0] and id[1] > index:
-                delete.append((name, index))
-        
-        for (name, index) in delete:
-            self.info[previous].remove((name, index))
+            if name == id[0]:
+                contains = True
+            if name == id[0] and index == id[1] - 1:
+                flag = True
+        if flag:
+            self.info[previous].remove((id[0], id[1] - 1))
+            self.info[previous].add(id)
+        elif id[1] == 0 and contains is False:
+            self.info[previous].add(id)
 
-
-        if id not in self.data.keys():
+        if id not in self.info[source]:
             message = ("schedule", id)
             res.append((message, source))
         return res
@@ -178,19 +184,25 @@ class EagerLazy(Node):
         res = []
         # enviar eager para os vizinhos que não recebeu o ACK
         for neighbor in self.neighbords:
-            if id not in self.info[neighbor]:
+            #if id not in self.info[neighbor]:#Mudar para que verifique se tem o id ou maior
+            r = [(name, index) for (name, index) in self.info[neighbor] if name == id[0] and index >= id[1]]
+
+            if len(r) is 0:
                 message = ("ihave", source, id)
                 res.append((message, neighbor))
-        
+
         if len(res) > 0:
             message = ("collector", id)
             res.append((message, source))
         return res
 
     def getRandomNeighbors(self, src, id):
-        aux = [x for x in self.neighbords if id not in self.info[x]]
-        if src in aux:
-            aux.remove(src)
+        aux = list(self.neighbords)
+        for neighbor in self.neighbords:
+            for (name, index) in self.info[neighbor]:#Verificar isto
+                if name == id[0] and index >= id[1]:
+                    aux.remove(neighbor)
+
         if self.fanout >= len(aux):
             return aux
         return random.sample(aux, self.fanout)
@@ -203,44 +215,45 @@ class EagerLazy(Node):
     def handleWehave(self, source, msg):
         res = []
         new_info = msg[1]
-        # previous = msg[2]
-        # check if the actual node received a new ID
-        self.new_id(new_info, res, source)
         # update the info about the system konwledge
         self.update_system_info(new_info)
-        # check if the emitter has missing information and still is neighbor
-        # for now dont send to the neighbor if contains new information
-        # self.send_wehave_previous(previous, new_info, source, res)
         return res
 
-    def send_wehave_previous(self, previous, new_info, source, res):
-        if previous in self.neighbords:
-            for (key, value) in new_info.items():
-                aux = self.info[key] - value
-                if aux:
-                    message = ("wehave", self.info, source)
-                    res.append((message, previous))
-                    break
-
-    def new_id(self, new_info, res, source):
-        my_ids = set()
-        new_ids = set()
-        for ids in self.info.values():
-            my_ids = my_ids.union(ids)
-        for ids in new_info.values():
-            new_ids = new_ids.union(ids)
-        if new_ids - my_ids:
-            message = "knowledge"
-            res.append((message, source))
-
     def update_system_info(self, new_info):
+        delete = set()
         for (key, value) in new_info.items():
-            self.info[key] = value.union(self.info[key])
+            for (name, index)  in value:
+                delete = [(n,i) for (n,i) in self.info[key] if name == n and i < index and key != self.name]
+                
+                for d in delete:
+                    self.info[key].remove(d)
+                
+                flag = True
+                for (n,i) in self.info[key]:
+                    if name == n and i >= index:
+                        flag = False
+                if flag:
+                    self.info[key].add((name, index))
+        #Percorrer todos e ver se tem maior
 
     def handleKnowledge(self, source, msg):
         res = []
+        
+        send = dict(self.info)
+        send[source] = set()
+        for key in self.info.keys():
+            values = [index for (name, index) in self.info[source] if name == key]
+            values.sort()
+            if len(values) >= 1 and values[0] == 0:
+                last = 0
+                for val in values[1:]:
+                    if val - 1 in values:
+                        last = val
+                send[source].add((key, last))
+    
         for nei in self.neighbords:
-            message = ("wehave", self.info, source)
+            #Mudar para que n enviei tudo mas que mudifique aquilo que ele proprio sabe e enviar apenas o topo
+            message = ("wehave", send, source)
             res.append((message, nei))
         
         self.gerbage_collector()
@@ -249,24 +262,13 @@ class EagerLazy(Node):
         return res
 
     def gerbage_collector(self):
-        flag = True
-        key = list(self.info.keys())[0]
-        aux = self.info[key].copy()
-        for (key, value) in self.info.items():
-            aux = aux.intersection(value)
-        for id in aux:
-            if id in self.data.keys():
-                flag = False
+        for id in self.data.keys():
+            flag = True
+            for v in self.info.values():
+                res = [i for (n, i) in v if n == id[0]]
+                res.sort()
+                if id[1] not in res or len(res) == 0 or res[-1] < id[1]:
+                    flag = False
+            if flag:
                 del self.data[id]
-        return flag
 
-    def new_knowladge(self, flag, res, source):
-        if flag:
-            message = "knowledge"
-            res.append((message, source))
-        else:
-            for (key, value) in self.info.items():
-                if len(value) > 0 and self.info[key].intersection(set(list(self.data.keys()))):
-                    message = "knowledge"
-                    res.append((message, source))
-                    break
