@@ -20,7 +20,7 @@ values = []
 
 Y = list()
 Z = list()
-X = range(4, 15)
+X = range(4, 10)
 
 for i in X:
     res = []
@@ -35,6 +35,7 @@ for i in X:
              collectorTimeout, knowledgeTimeout, scheduleTimeout, iteratorTimeout, 
              distance, deltaValue, rg.Types.COUNT, terminationError)
         simulation.start()
+        des.printNodes(simulation.nodes)
         values.append(simulation.getValues())
         res.append(simulation.time)
         missess.append(simulation.missess)

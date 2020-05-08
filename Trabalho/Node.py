@@ -144,9 +144,16 @@ class PushSumProtocol(Node):
 
         def handleKnowledge(self, src, msg):
             res = []
+            # send to all the neighbors info
             for neighbor in self.neighbors:
                 message = {'type': 'wehave', 'previous': self.name, 'info': self.info}
                 res.append((message, neighbor))
+            # if target already received the data remove from data dictionary
+            aux = self.data.copy()
+            for (id, _) in aux.items():
+                dataTarget = self.target[id]
+                if id in self.info[dataTarget]:
+                    del self.data[id]
 
             message = {'type': 'knowledge'}
             res.append((message, src))
