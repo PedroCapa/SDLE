@@ -23,6 +23,20 @@ class PushSumProtocol(Node):
         for process in processess:
             self.info[process] = set()
 
+    def setWeight(self, weight):
+        value = self.values[0]
+        self.values = (value, weight)
+
+    def getRealValue(self):
+        if self.values[1] == 0:
+            self.realValue = 9223372036854775807
+            return self.realValue
+        self.realValue = self.values[0] / self.values[1]
+        return self.realValue
+
+    def finish(self, result, terminationError):
+            return (abs(self.getRealValue() - result) / result < terminationError)
+
     #src = proprio nodo
     #message = ('gossip', src, target, (id, data))
     def handle(self, source, msg):

@@ -5,6 +5,7 @@ import time
 import sys
 from datetime import datetime
 from RandomGraph import RandomGraph, Types
+from statistics import mean
 
 def printNodes(nodes):
     for node in nodes:
@@ -37,7 +38,7 @@ class Sim:
     # distances é um Map {(0, 1): 100, (1,2): 23} origem, destino e distancia
     def __init__(self, nodes, distances, loss_probability, regenGraphTimeout, 
             collectorTimeout, knowledgeTimeout, scheduleTimeout, iteratorTimeout, 
-            distance, deltaValue, type, terminationTime):
+            distance, deltaValue, type, terminationError):
         self.nodes = nodes
         self.distances = distances
         self.time = 0
@@ -60,7 +61,13 @@ class Sim:
         self.deltaValue = deltaValue
         self.type = type
         self.values = []
-        self.terminationTime = terminationTime
+        self.terminationError = terminationError
+
+    def getValues(self):
+        res = []
+        for node in self.nodes:
+            res.append(node.getRealValue())
+        return res
 
     def start(self):
         self.assignInitialValues()
@@ -77,7 +84,7 @@ class Sim:
                 randValue = random.random() * self.deltaValue
                 node.values = (randValue, 0)
                 self.values.append(node.values[0])
-            self.nodes[0].values[1] = 1
+            self.nodes[0].setWeight(1)
 
         def assignAverageValues(self):
             for node in self.nodes:
@@ -89,7 +96,7 @@ class Sim:
             for node in self.nodes:
                 node.values = (1, 0)
                 self.values.append(node.values[0])
-            self.nodes[0].values[1] = 1
+            self.nodes[0].setWeight(1)
 
         switch = {
             Types.SUM: assignSumValues,
@@ -97,6 +104,11 @@ class Sim:
             Types.COUNT: assignCountValues
         }
         switch.get(self.type, Types.AVERAGE)(self)
+        self.expectedResult = {
+            Types.AVERAGE: mean(self.values),
+            Types.SUM: sum(self.values),
+            Types.COUNT: len(self.nodes)
+        }
 
     # the simulator should generate iterators and knowledge events to start the simulation
     def startEvents(self):
@@ -126,8 +138,6 @@ class Sim:
         if flag and self.time % self.regenGraphTimeout == 0:
             self.genarete_new_graph()
             self.update_pending()
-            print('---------Changing graph--------')
-            printNodes(self.nodes)
 
     def genarete_new_graph(self):
         nodes_number = len(self.nodes)
@@ -216,16 +226,18 @@ class Sim:
         events = node.handle(node.name, message)
         for (msg, neighbor) in events:
             switch.get(msg['type'])(self, msg, neighbor, node)
-        printNodes(self.nodes)
-        print('------------------------')
 
+    def canSimulationFinish(self):
+        result = self.expectedResult[self.type]
+        for node in self.nodes:
+            if not node.finish(result, self.terminationError):
+                return False
+        return True
 
     def run_loop(self):
         self.time = 1
-        while(self.time < self.terminationTime):
+        while(not self.canSimulationFinish()):
             # encontrar o evento com o menor delay
-            for event in self.pending:
-                print(event)
             (delay, (src, dst, msg)) = min_delay(self.pending)
             next_event = (delay, (src, dst, msg))
             self.pending.remove(next_event)
@@ -234,13 +246,9 @@ class Sim:
             self.time = delay
             # Correr o handle do nodo (return (msg, [id]))
             node = self.nodes[dst]
-            print('---------Next Event-----------', len(self.pending))
-            print(next_event)
             if simulate_random_loss(next_event, self.loss_probability):
                 # Atualizar a lista de eventos
-                print('---------Message Sent----------')
                 self.generate_events(node, msg)
             else:
                 self.missess = self.missess + 1
-            print('--------------------------')
             self.regenGraph(regenFlag)

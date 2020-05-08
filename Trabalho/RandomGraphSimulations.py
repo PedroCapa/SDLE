@@ -14,12 +14,13 @@ seed = 6
 loss_probability = 0.9
 regenGraphTimeout = 15
 deltaValue = 50
-terminationTime = 150
+terminationError = 0.02
 
+values = []
 
 Y = list()
 Z = list()
-X = range(4, 5)
+X = range(4, 15)
 
 for i in X:
     res = []
@@ -32,8 +33,9 @@ for i in X:
         edges = graph.edges_dic(distance)
         simulation = des.Sim(nodes, edges, loss_probability, regenGraphTimeout,
              collectorTimeout, knowledgeTimeout, scheduleTimeout, iteratorTimeout, 
-             distance, deltaValue, rg.Types.AVERAGE, terminationTime)
+             distance, deltaValue, rg.Types.COUNT, terminationError)
         simulation.start()
+        values.append(simulation.getValues())
         res.append(simulation.time)
         missess.append(simulation.missess)
     Y.append(np.average(res))
@@ -41,3 +43,5 @@ for i in X:
 
 pg.generateRoundsGraph(X, Y)
 pg.generateMissessGraph(X, Z)
+
+print(values)
