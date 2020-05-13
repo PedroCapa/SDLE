@@ -14,7 +14,7 @@ seed = 6
 loss_probability = 0.9
 regenGraphTimeout = 15
 deltaValue = 50
-terminationError = 0.02
+terminationError = 0.015
 
 values = []
 

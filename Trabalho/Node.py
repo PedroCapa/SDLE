@@ -143,10 +143,11 @@ class PushSumProtocol(Node):
             return res
 
         def handleKnowledge(self, src, msg):
+            mat = self.infoToMatrix()
             res = []
             # send to all the neighbors info
             for neighbor in self.neighbors:
-                message = {'type': 'wehave', 'previous': self.name, 'info': self.info}
+                message = {'type': 'wehave', 'previous': self.name, 'info': mat}
                 res.append((message, neighbor))
             # if target already received the data remove from data dictionary
             aux = self.data.copy()
@@ -160,8 +161,8 @@ class PushSumProtocol(Node):
             return res
 
         def handleWeHave(self, src, msg):
+            new_info = self.matrixToInfo(msg['info'])
             res = []
-            new_info = msg['info']
 
             for (key, value) in new_info.items():
                 self.info[key] = value.union(self.info[key])
@@ -268,6 +269,59 @@ class PushSumProtocol(Node):
         self.info[self.name].add(id)
         return id
 
+    def infoToMatrix(self):
+        matrixSize = len(list(self.info.keys()))
+        res = [[-1 for col in range(matrixSize)] for row in range(matrixSize)]
+        for node in self.info:
+            keyIndex = list(self.info.keys()).index(node)
+            res[keyIndex] = self.infoToList(node, matrixSize)
+        return res
+
+    def infoToList(self, node, matrixSize):
+        res = [-1 for elem in range(matrixSize)]
+        for (name, id) in self.info[node]:
+            nameIndex = list(self.info.keys()).index(name)
+            if id > res[nameIndex]:
+                res[nameIndex] = id
+        res = self.checkList(res, node)
+        return res
+
+    def checkList(self, res, node):
+        for i in range(len(res)):
+            key = list(self.info.keys())[i]
+            id = res[i]
+            res[i] = self.checkId(key, id, node)
+        return res
+
+    def checkId(self, key, id, node):
+        while(id > -1):
+            idInfo = set([i for (n, i) in self.info[node] if key == n])
+            r = set(range(id + 1))
+            if r.issubset(idInfo):
+                break
+            else:
+                id = id - 1
+        if id == 0 and (key, id) not in self.info[node]:
+            id = -1
+        return id
+
+    def matrixToInfo(self, matrix):
+        newInfo = {}
+        matrixSize = len(matrix)
+        for i in range(matrixSize):
+            key = list(self.info.keys())[i]
+            newInfo[key] = self.listToInfo(list(matrix[i]))
+        return newInfo
+
+    def listToInfo(self, values):
+        res = []
+        for i in range(len(values)):
+            key = list(self.info.keys())[i]
+            value = values[i]
+            info = [(key, i) for i in range(value + 1)]
+            res.extend(info)
+        return set(res)
+
     def start(self):
         res = []
         message = {'type': 'iterator'}
@@ -275,3 +329,24 @@ class PushSumProtocol(Node):
         message = {'type': 'knowledge'}
         res.append((message, self.name))
         return res
+
+a = PushSumProtocol([1], 3, (0,0), 1, [0,1,2,3])
+a.info[0].add((0, 0))
+a.info[0].add((0, 1))
+a.info[0].add((0, 2))
+a.info[0].add((1, 0))
+a.info[0].add((1, 1))
+a.info[0].add((3, 0))
+
+a.info[1].add((0, 0))
+a.info[1].add((1, 0))
+a.info[1].add((1,1))
+a.info[1].add((1, 2))
+
+a.info[3].add((0, 1))
+a.info[3].add((0, 2))
+a.info[3].add((1, 0))
+a.info[3].add((1, 2))
+a.info[3].add((3, 0))
+a.info[3].add((3, 1))
+mat = a.infoToMatrix()
