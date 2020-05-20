@@ -29,7 +29,7 @@ class PushSumProtocol(Node):
 
     def getRealValue(self):
         if self.values[1] == 0:
-            self.realValue = 9223372036854775807
+            self.realValue = 0
             return self.realValue
         self.realValue = self.values[0] / self.values[1]
         return self.realValue
@@ -61,7 +61,7 @@ class PushSumProtocol(Node):
             if target == src:
                 self.values = (self.values[0] + data[0], self.values[1] + data[1])
             
-            #if the target are our neighbord send a gossip to him
+            #if the target is our neighbord send a gossip to him
             elif target in self.neighbors:
                 message = {'type': 'gossip', 'previous': self.name, 'target': target, 'id': id, 'data': data}
                 res.append((message, target))
@@ -143,11 +143,11 @@ class PushSumProtocol(Node):
             return res
 
         def handleKnowledge(self, src, msg):
-            mat = self.infoToMatrix()
+            #mat = self.infoToMatrix()
             res = []
             # send to all the neighbors info
             for neighbor in self.neighbors:
-                message = {'type': 'wehave', 'previous': self.name, 'info': mat}
+                message = {'type': 'wehave', 'previous': self.name, 'info': self.info}
                 res.append((message, neighbor))
             # if target already received the data remove from data dictionary
             aux = self.data.copy()
@@ -161,8 +161,9 @@ class PushSumProtocol(Node):
             return res
 
         def handleWeHave(self, src, msg):
-            new_info = self.matrixToInfo(msg['info'])
+            #new_info = self.matrixToInfo(msg['info'])
             res = []
+            new_info = msg['info']
 
             for (key, value) in new_info.items():
                 self.info[key] = value.union(self.info[key])
@@ -192,24 +193,24 @@ class PushSumProtocol(Node):
             res = []
             id = msg['id']
             target = self.target[id]
-            
+
             if id in self.info[target]:
                 return res
-            
+
             elif target in self.neighbors and id not in self.info[target]:
                 gossipNeighbors = [self.target[id]]
                 gossip = self.addGossipMessages(gossipNeighbors, id)
-
                 ihaveNeighbors = self.getIHaveNeighbors(-1, gossipNeighbors)
                 ihave = self.addIHaveMessages(ihaveNeighbors, id)
                 res = gossip + ihave
-                
                 message = {'type': 'collector', 'id': id}
                 res.append((message, src))
 
             elif target not in self.neighbors:
                 ihaveNeighbors = self.getIHaveNeighbors(-1, [])
                 res = self.addIHaveMessages(ihaveNeighbors, id)
+                message = {'type': 'collector', 'id': id}
+                res.append((message, src))
 
             return res
 
@@ -253,8 +254,9 @@ class PushSumProtocol(Node):
         if self.fanout >= len(aux):
             return aux
         return random.sample(aux, self.fanout)
-
+    
     def getIHaveNeighbors(self, previous, gossip):
+        # improve to not send to a neighbor that already has the info
         ihave = [x for x in self.neighbors if x not in gossip and x != previous]
         return ihave
 

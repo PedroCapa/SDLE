@@ -89,5 +89,6 @@ Quando souber que o target já tem os dados remover essa entrada do dicionário 
 
 ### Tasks
 
-* Review handleKnowledge to just send the greatest id of each node
-* Review handleWeHave to add every id beneath the one that received
+* Adicionar snapshots ao simulador de forma a verificar a convergência do algoritmo, 
+    * Usar variáveis como probabilidade de perda de mensagens para ver de que forma varia a convergência do algoritmo
+* No relatório falar da nossa implementação do algoritmo

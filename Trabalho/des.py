@@ -23,22 +23,12 @@ def min_delay(pending):
             min_event = event
     return min_event
 
-def simulate_random_loss(next_event, probability = 1):
-    (_, (_, _, msg)) = next_event
-    type = msg['type']
-    # in case the message has one of the follwing types, there's a chance of loss
-    if type == "gossip" or type == "wehave" or type == "ihave" or type == "request":
-        rand = random.uniform(0, 1)
-        return rand < probability
-    # case its a schedule or collector, the event will allways going to happen
-    return True
-
 class Sim:
     # nodes é uma lista com os nodos
     # distances é um Map {(0, 1): 100, (1,2): 23} origem, destino e distancia
     def __init__(self, nodes, distances, loss_probability, regenGraphTimeout, 
             collectorTimeout, knowledgeTimeout, scheduleTimeout, iteratorTimeout, 
-            distance, deltaValue, type, terminationError):
+            distance, deltaValue, type, terminationError, snapTime):
         self.nodes = nodes
         self.distances = distances
         self.time = 0
@@ -62,6 +52,9 @@ class Sim:
         self.type = type
         self.values = []
         self.terminationError = terminationError
+        self.snapshot = {}
+        self.snapTime = snapTime
+        self.exchange = 0
 
     def getValues(self):
         res = []
@@ -73,6 +66,7 @@ class Sim:
         self.assignInitialValues()
         printNodes(self.nodes)
         self.startEvents()
+        self.startSnapshot()
         self.run_loop()
 
     # Function that assigns the initial values to all the nodes
@@ -110,6 +104,11 @@ class Sim:
             Types.COUNT: len(self.nodes)
         }
 
+    def startSnapshot(self):
+        self.snapshot['time'] = [0]
+        for node in self.nodes:
+            self.snapshot[node.name] = [node.getRealValue()]
+            
     # the simulator should generate iterators and knowledge events to start the simulation
     def startEvents(self):
         for node in self.nodes:
@@ -234,8 +233,24 @@ class Sim:
                 return False
         return True
 
+    def takeSnapshot(self):
+        for node in self.nodes:
+            self.snapshot[node.name].append(node.getRealValue())
+
+    def simulate_random_loss(self,next_event, probability=1):
+        (_, (_, _, msg)) = next_event
+        type = msg['type']
+        # in case the message has one of the follwing types, there's a chance of loss
+        if type == "gossip" or type == "wehave" or type == "ihave" or type == "request":
+            self.exchange = self.exchange + 1
+            rand = random.uniform(0, 1)
+            return rand < probability
+        # case its a schedule or collector, the event will allways going to happen
+        return True
+
     def run_loop(self):
         self.time = 1
+        snap = 0
         while(not self.canSimulationFinish()):
             # encontrar o evento com o menor delay
             (delay, (src, dst, msg)) = min_delay(self.pending)
@@ -246,9 +261,14 @@ class Sim:
             self.time = delay
             # Correr o handle do nodo (return (msg, [id]))
             node = self.nodes[dst]
-            if simulate_random_loss(next_event, self.loss_probability):
+            if self.simulate_random_loss(next_event, self.loss_probability):
                 # Atualizar a lista de eventos
                 self.generate_events(node, msg)
             else:
                 self.missess = self.missess + 1
             self.regenGraph(regenFlag)
+
+            if delay >= snap + self.snapTime:
+                snap = delay
+                self.snapshot['time'].append(delay)
+                self.takeSnapshot()
