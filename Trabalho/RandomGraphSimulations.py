@@ -13,7 +13,7 @@ def random_color():
     return tuple(rgbl)
 
 n = 10
-m = 2
+m = 5
 scheduleTimeout = 5
 collectorTimeout = 5
 knowledgeTimeout = 10
@@ -22,14 +22,14 @@ distance = 1
 seed = 6
 loss_probability = 1
 regenGraphTimeout = 15000
-deltaValue = 50
+deltaValue = 10
 terminationError = 0.01
 
 values = []
 
 Y = list()
 Z = list()
-X = range(4,30)
+X = range(4,20)
 H = list()
 
 for i in X:
@@ -45,7 +45,7 @@ for i in X:
         edges = graph.edges_dic(distance)
         simulation = des.Sim(nodes, edges, loss_probability, regenGraphTimeout,
                 collectorTimeout, knowledgeTimeout, scheduleTimeout, iteratorTimeout, 
-                distance, deltaValue, rg.Types.COUNT, terminationError, snap)
+                distance, deltaValue, rg.Types.AVERAGE, terminationError, snap)
         simulation.start()
         des.printNodes(simulation.nodes)
         values.append(simulation.getValues())
