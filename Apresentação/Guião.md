@@ -16,10 +16,11 @@ Decisão
 Protocolo
 
 	Este algoritmo permite o cálculo das funções SUM, COUNT e AVERAGE, através da atribuição de um par de valores a todos os nodos da rede e dependendo dos valores atribuídos é possível calcular uma destas funções de agregação.
+	O valor de cada nodo é obtido pela divisão do primeiro elemento do par pelo segundo.
 	De forma a que todos os nodos calculem o valor das funções da agregação, cada nodo num determinado intervalo de tempo envia metade dos seus valores a um vizinho aleatório e a outra metade fica para si mesmo.
 	Quando um nodo recebe uma mensagem de um vizinho, soma os pesos que recebeu na mensagem aos pesos que tinha guardado. 
-	Este algoritmo vai ter a tendência para convergir para o resultado correto, quanto maior for o número de mensagens trocadas por entre todos os nodos.
-	Uma propriedade que é indispensável manter é a soma dos pesos na rede têm de ser constante de forma a se obter o resultado correto.
+	Este algoritmo vai ter a tendência para convergir para o resultado correto. Quanto maior for o número de mensagens trocadas maior será a aproximação.
+	Uma propriedade que é indispensável manter é a soma dos pesos na rede têm de ser constante.
 	As principais vantagens deste algoritmo consistem no facto de ser fiável, convergir para o resultado correto, os cálculos efetuados em cada nodo serem muito reduzidos e funcionar para qualquer topologia.
 	Por outro lado, o tempo para se obter o resultado depende do tamanho e topologia da rede e se houver a falha de um nodo é muito provável que o resultado não convirja.
 
@@ -74,7 +75,7 @@ Resultados
 	Sempre que utilizamos o programa eram realizadas várias simulações e no fim era feitas as médias do número de mensagens perdidas, enviadas e o tempo que demorou para convergir.
 	Além disso, para a última simulação eram registados todos os snapshots para formar um gráfico e ter um representação visual da evolução do peso em cada nodo.
 
-	Este gráfico mostra a evolução dos valores dos pesos dos nodos para a função de agregação COUNT, para um grafo com ligações aleatórias, com probabilidade de perda de mensagens a 0.3 e o erro de terminação de 1%.
+	Este gráfico mostra a evolução dos valores dos pesos dos nodos para a função de agregação COUNT, para um grafo com ligações aleatórias, com probabilidade de perda de mensagens de 0.3 e o erro de terminação de 1%.
 	Como podemos ver no final da simulação todos os pesos dos nodos estão próximos do resultado desejado, perto de 30.
 
 	O gráfico da esquerda mostra o tempo médio necessário para convergir, já o da direita mostra o número médio de mensagens trocadas até convergir.
