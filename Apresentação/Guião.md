@@ -9,7 +9,7 @@ Introdução (L)
 Decisão (P)
 
 	Os motivos pelos quais decidimos escolher o Push-Sum Protocol podem ser reduzidos aos seguintes:
-	* Primeiro, este algoritmo funciona para qualquer tipo de topologia, pelo que não nos obrigava a ter particular atenção à construção da rede.
+	* Primeiro, este algoritmo funciona para qualquer tipo de topologia, pelo que não nos obrigava a ter especial atenção à construção da rede.
 	* Em segundo lugar, este algoritmo em termos da categoria de computação pertence à categoria Average, que tem o princípio de convergir para o resultado correto, que é um principio seguido por muitos algoritmos.
 	* Por último, se assegurásemos que uma propriedade fosse cumprida conseguíamos obter o resultado correto.
 
@@ -57,14 +57,12 @@ Papel do Simulador (P)
 	As mensagens que eram enviadas pelos eventos wehave eram dicionários em que a chave era o id de um nodo e o valor é uma lista com os ids das mensagens que o nodo conhece.
 	Se em cada evento do tipo wehave fossem enviados estes dicionários, ao fim de algum tempo era causado um grande overhead e muita da informação era repetida.
 	Para contornar este problema podíamos transformar a mensagem numa matriz.
-	Na primeira implementação o valor era calculado a partir do valor que mais alto de todos os ids de um determinado nodo que tenha todos os número consecutivos a partir do zero.
+	Na primeira implementação o valor era calculado a partir do valor mais alto de todos os ids de um determinado nodo que tenha todos os número consecutivos a partir do zero.
 
-	Como uma mensagem gossip tem apenas um target, não havia a necessidade de enviar uma mensagem para todos os nodos e com a introdução de otimizações nas mensagens um nodo poderia nunca informar os outros nodos que já tinha uma determinada mensagem.
-	Por exemplo, se um nodo recebesse a mensagem com id (0,1), poderia nunca chegar a informar os outros que tinha este id, porque não era obrigatório receber a mensagem com id (0,0), visto que se o target da mensagem com id (0,0) já tivesse recebido a mensagem, esta não ia ser mais propagada pelo resto da rede.
+	Como uma mensagem gossip tem apenas um target, não havia a necessidade de enviar uma mensagem para todos os nodos e com a introdução de otimizações nas mensagens um nodo poderia nunca informar os outros que já tinha uma determinada mensagem.
+	Por exemplo, se um nodo recebesse a mensagem com id (0,1), poderia nunca chegar a informar os outros que tinha este id, porque não era obrigatório que recebesse a mensagem com id (0,0), se o target da mensagem com id (0,0) já tivesse recebido a mensagem.
 	Ao descobrirmos esta falha modificamos ligeiramente como a otimização era feita.
-	Cada valor na matriz, em vez de ser o id máximo, seria a soma dos expoentes de 2 que esse nodo conhecia.
-
-	Por exemplo, se o nodo 0 tivesse os dados das mensagens (1, 1) e (1, 3) o valor na matriz com indices (0,1) seria 10.
+	Cada valor na matriz seria a soma dos expoentes de 2 que esse nodo conhecia.
 
 	Esta figura mostra o exemplo da transformação de um dicionário para uma matriz.
 
@@ -73,15 +71,14 @@ Resultados (P)
 
 	De forma a confirmar a viabilidade do algoritmo decidimos testar e comparar os resultados de alguns dos valores dos diferentes testes.
 	Sempre que utilizamos o programa eram realizadas várias simulações e no fim era feitas as médias do número de mensagens perdidas, enviadas e o tempo que demorou para convergir.
-	Além disso, para a última simulação eram registados todos os snapshots para formar um gráfico e ter um representação visual da evolução do peso em cada nodo.
+	Além disso, para a última simulação guardamos todos os snapshots para formar um gráfico e ter um representação visual da evolução do peso em cada nodo.
 
 	Este gráfico mostra a evolução dos valores dos pesos dos nodos para a função de agregação COUNT, para um grafo com ligações aleatórias, com probabilidade de perda de mensagens de 0.3 e o erro de terminação de 1%.
 	Como podemos ver no final da simulação todos os pesos dos nodos estão próximos do resultado desejado, perto de 30.
 
 	O gráfico da esquerda mostra o tempo médio necessário para convergir, já o da direita mostra o número médio de mensagens trocadas até convergir.
 	Como era esperado um maior número de mensagens perdidas representa um aumento no tempo necessário para convergir, principalmente para redes com um número de nodos mais alto, em que uma perda de 30% das mensagens implica uma duplicação do tempo necessário para convergir.
-	Já em relação ao número de mensagens enviadas, uma perda de 10% e 30% das mensagens implicou um aumento de 3 e 10 vezes do número de mensagens enviadas, respetivamente.
-	Pelo que podemos concluir que a perda de uma mensagem pode implicar o envio de várias mensagens para tentar colmatar a perda.
+	Já em relação ao número de mensagens enviadas, uma perda de 10% e 30% das mensagens implicou um aumento de 3 e 10 vezes do número de mensagens enviadas, respetivamente devido ao facto de que a perda de uma mensagem pode implicar o envio de várias mensagens para colmatar a perda.
 
 Conclusão (P)
 
