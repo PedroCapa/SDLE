@@ -62,7 +62,7 @@ Simulador (L)
 
 Papel do Simulador (P)
 
-	O simulador que usaríamos para testar o algoritmo ajudou-nos a descobrir algumas falhas na nossa implementação, principalmente na fase de otimização.
+	O simulador que usamos para testar o algoritmo ajudou-nos a descobrir algumas falhas na nossa implementação, principalmente na fase de otimização.
 
 	As mensagens que eram enviadas pelos eventos wehave eram dicionários em que a chave era o id de um nodo e o valor é uma lista com os ids das mensagens que o nodo conhece.
 	Se em cada evento do tipo wehave fossem enviados estes dicionários, ao fim de algum tempo era causado um grande overhead e muita da informação era repetida.
@@ -70,7 +70,7 @@ Papel do Simulador (P)
 	Na primeira implementação o valor era calculado a partir do valor mais alto de todos os ids de um determinado nodo que tenha todos os número consecutivos a partir do zero.
 
 	Como uma mensagem gossip tem apenas um target, não havia a necessidade de enviar uma mensagem para todos os nodos e com a introdução de otimizações nas mensagens um nodo poderia nunca informar os outros que já tinha uma determinada mensagem.
-	Por exemplo, se um nodo recebesse a mensagem com id (0,1), poderia nunca chegar a informar os outros que tinha este id, porque não era obrigatório que recebesse a mensagem com id (0,0), se o target da mensagem com id (0,0) já tivesse recebido a mensagem.
+	Por exemplo, se um nodo recebesse a mensagem com id (0,1), poderia nunca chegar a informar os outros que tinha este id, porque podia não receber a mensagem com id (0,0), se não fosse o target da mensagem.
 	Ao descobrirmos esta falha modificamos ligeiramente como a otimização era feita.
 	Cada valor na matriz seria a soma dos expoentes de 2 que esse nodo conhecia.
 
