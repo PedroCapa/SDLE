@@ -15,50 +15,50 @@ Decisão (P)
 
 Protocolo (L)
 
-	O Push-Sum Protocol permite o cálculo das funções SUM, COUNT e AVERAGE, através da atribuição de um par de valores a todos os nodos e dependendo dos valores inicialmente atribuídos é possível calcular uma destas funções de agregação.
+	O Push-Sum Protocol permite o cálculo das funções SUM, COUNT e AVERAGE, através da atribuição de um par de valores (s, w) a todos os nodos e dependendo desses valores é possível calcular uma destas funções de agregação.
+	O s representa a soma dos valores trocados e o w o peso associado à soma.
 
-	De forma a que todos calculem o valor das funções da agregação, cada nodo num determinado intervalo de tempo envia metade dos seus valores a um vizinho aleatório e a outra metade fica para si mesmo.
+	De forma a calcular o valor das funções, cada nodo num determinado intervalo de tempo envia metade dos seus valores a um vizinho aleatório e a outra metade fica para si mesmo.
 	
-	Quando um nodo recebe uma mensagem de um vizinho, soma os pesos que recebeu na mensagem aos pesos que tinha guardado. 
+	Quando um nodo recebe uma mensagem, soma os pesos que recebeu na mensagem aos pesos que tinha guardado. 
 	
 	Este algoritmo tem a tendência de convergir para o resultado correto, quanto maior for o número de mensagens trocadas.
 	
-	A soma dos pesos na rede têm de ser constante para que a haja convergência.
+	A soma dos pesos na rede têm de ser constante para que a haja convergência, esta é uma propriedade indispensável.
 	
-	As principais vantagens deste algoritmo consistem no facto de os cálculos efetuados em cada nodo serem muito reduzidos e funcionar para qualquer topologia.
+	As principais vantagens deste algoritmo consistem no facto dos cálculos efetuados em cada nodo serem muito reduzidos e funcionar para qualquer topologia.
 	
-	Por outro lado, o tempo para se obter o resultado depende do tamanho e topologia da rede e se houver a falha de um nodo é provável que o resultado não convirja.
+	Por outro lado, o tempo para convergir depende do tamanho e topologia da rede e se houver a falha de um nodo é provável que o resultado não convirja.
 
 Implementação (L)
 
-	Inicialmente foi implementado o algoritmo tal como tinha sido descrito em que foi assumido que não ocorreria perda de mensagens e a topologia era constante.
+	Inicialmente foi implementado o algoritmo tal como tinha sido descrito em que foi assumido que não haveria perda de mensagens nem troca da estrutura da rede.
 
 	Para tal, era apenas necessário criar dois tipos de eventos, um que enviasse os pesos para um vizinho aleatório, o gossip, e um outro evento, o iterator, que em determinados períodos originava eventos gossip.
 
-	Como o objetivo de cada gossip passava por enviar os pesos para apenas um vizinho e não para toda a rede, então foi considerado que cada mensagem tinha um target, que não era alterado, mesmo que a mensagem fosse perdida ou a estrutura da rede fosse alterada.
+	Como o objetivo de cada gossip passava por enviar os pesos para apenas um vizinho e não para toda a rede, então consideradomos que cada mensagem tinha um target, que não era alterado, mesmo que a mensagem fosse perdida ou a estrutura da rede fosse alterada.
 
-	Para tornar o algoritmo mais completo teríamos de o tornar imune à perda de uma parte das mensagens e à alteração da rede.
+	Para tornar o algoritmo mais completo teríamos de o tornar imune à perda de mensagens e à alteração da rede.
 
-	Esta alteração implica que sejam realizadas algumas verificações, nomeadamente, sempre que um nodo envie uma mensagem gossip era originado o evento collector.
+	Esta alteração implicou que fosse gerado um evento collector sempre que uma mensagem gossip fosse enviada, que ao fim de um determinado timeout enviava uma mensagem ihave a todos os vizinhos, caso não tenha conhecimento que o target tenha recebido a mensagem.
 
-	Ao fim de um determinado timeout este evento enviava uma mensagem ihave a todos os vizinhos, caso o nodo que originou o gossip não tenha conhecimento que o target tenha recebido a mensagem.
+	O nodo que recebia um ihave, originava um evento schedule, que passado um determinado timeout, caso o nodo não soubesse que o target da mensagem já a tinha recebido, ia enviar um request a um vizinho que tinha os dados.
 
-	O nodo que recebia um ihave, originava um evento schedule, que passado um determinado timeout, caso o nodo não soubesse que o target da mensagem já tinha recebido os valores, ia enviar um request a um vizinho que tinha os dados.
-
-	Assim, poderia-se propagar pela rede o conhecimento de cada nodo e criar um garbage collector para eliminar dados desnecessárias criamos os eventos wehave.
+	Para propagar pela rede o conhecimento de cada nodo e criar um garbage collector para eliminar dados desnecessárias criamos os eventos wehave, que consistia no envio dos ids que cada nodo conhecia.
 
 	Estas mensagens eram geradas pelos eventos knowledge em intervalos de tempo fixos.
 
 Simulador (L)
 
-	De forma a verificar a nossa implementação do algoritmo críamos um simulador. 
-	No inicio da simulação os pesos dos nodos eram inicializados conforme a função de agregação escolhida.
+	De forma a verificar a nossa implementação do algoritmo críamos um simulador, que funcionava da seguinte forma:
+
+	Primeiro, os pesos dos nodos eram inicializados conforme a função de agregação escolhida.
 	
-	Em seguida gerava os eventos iniciais, para posteriormente correr a simulação.
+	Em seguida eram gerados os eventos iniciais, para posteriormente correr a simulação.
 
-	Na elaboração do simulador decidimos implementar algumas funcionalidades, nomeadamente, a perda de mensagens entre nodos de forma aleatória, a reconstrução da rede em intervalos de tempo fixos, a escolha do timeout de alguns eventos, a escolha da margem de erro para parar a simulação, a contagem do número de mensagens enviadas e perdidas e o suporte para todos os tipos de eventos do protocolo.
+	Na elaboração do simulador decidimos implementar algumas funcionalidades, nomeadamente, a perda de mensagens entre nodos de forma aleatória, a reconstrução da rede em intervalos de tempo fixos, a contagem do número de mensagens enviadas e perdidas e o suporte para todos os tipos de eventos do protocolo.
 
-	Uma outra funcionalidade que decidimos implementar foram os snapshots, que permitia ao simulador em determinados períodos de tempo guardar os valores de cada nodo de forma a verificar se o algoritmo estava com a tendência em convergir e consequentemente, se o algoritmo estava a ser eficaz.
+	Uma outra funcionalidade que implementamos foram os snapshots, que permitia ao simulador guardar os valores de cada nodo de forma a verificar se o algoritmo estava com a tendência em convergir e consequentemente, se estava a ser eficaz.
 
 Papel do Simulador (P)
 
