@@ -70,7 +70,7 @@ Papel do Simulador (P)
 	Na primeira implementação o valor era calculado a partir do valor mais alto de todos os ids de um determinado nodo que tenha todos os número consecutivos a partir do zero.
 
 	Como uma mensagem gossip tem apenas um target, não havia a necessidade de enviar uma mensagem para todos os nodos e com a introdução de otimizações nas mensagens um nodo poderia nunca informar os outros que já tinha uma determinada mensagem.
-	Por exemplo, se um nodo recebesse a mensagem com id (0,1), poderia nunca chegar a informar os outros que tinha este id, porque podia não receber a mensagem com id (0,0), se não fosse o target da mensagem.
+	Por exemplo, se um nodo recebesse a mensagem com id (0,1), poderia nunca chegar a informar os outros que tinha este id, porque podia não receber a mensagem com id (0,0).
 	Ao descobrirmos esta falha modificamos ligeiramente como a otimização era feita.
 	Cada valor na matriz seria a soma dos expoentes de 2 que esse nodo conhecia.
 
@@ -87,7 +87,9 @@ Resultados (P)
 	Como podemos ver no final da simulação todos os pesos dos nodos estão próximos do resultado desejado, perto de 30.
 
 	O gráfico da esquerda mostra o tempo médio necessário para convergir, já o da direita mostra o número médio de mensagens trocadas até convergir.
+	
 	Como era esperado um maior número de mensagens perdidas representa um aumento no tempo necessário para convergir, principalmente para redes com um número de nodos mais alto, em que uma perda de 30% das mensagens implica uma duplicação do tempo necessário para convergir.
+	
 	Já em relação ao número de mensagens enviadas, uma perda de 10% e 30% das mensagens implicou um aumento de 3 e 10 vezes do número de mensagens enviadas, respetivamente devido ao facto de que a perda de uma mensagem pode implicar o envio de várias mensagens para colmatar a perda.
 
 Conclusão (P)
