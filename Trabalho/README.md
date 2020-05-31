@@ -1,17 +1,24 @@
 # Trabalho Sistemas Distribuidos em Larga Escala
 
-## Tarefas
+## des.py
 
-Fazer os handler na classe PushSumProtocol de cada tipo de evento (x)
-Acrescentar o evento iterator no simulador (x)
-Fazer o método que gera os eventos iniciais (x)
-Atribuir os valores iniciais a todos os nodoso (x)
-Alterar estrutura do grafo de x em x segundos (x)
-Tirar snapshots aos valores do sistema
-Caso o target seja nosso vizinho pedir o request (?)
-Limpar o dicionario da data ()
-Terminar quando o erro for menor que um determinado valor ()
-Correr com grafos com vários nodos de forma a ver a influência do tamanho do grafo no tempo que demora a acabar ()
+Simulador
+
+## Node.py
+
+Implementação do Algoritmo Push-Sum Protocol
+
+## RandomGraph.py
+
+Geração de um gráfico aleatório
+
+## plotGraph.py
+
+Geração dos gráficos
+
+## RandomGraphSimulations.py
+
+Arrancar o simulador
 
 ### Gossip
 
@@ -81,14 +88,3 @@ data = {id: data}
 info = {nodo: [id]}
 target = {id: target}
 values = (value, weight)
-
-### Garbage Collector
-
-Deve ser feito no evento knowledge
-Quando souber que o target já tem os dados remover essa entrada do dicionário data
-
-### Tasks
-
-* Adicionar snapshots ao simulador de forma a verificar a convergência do algoritmo, 
-    * Usar variáveis como probabilidade de perda de mensagens para ver de que forma varia a convergência do algoritmo
-* No relatório falar da nossa implementação do algoritmo
