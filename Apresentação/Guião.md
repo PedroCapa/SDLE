@@ -95,5 +95,5 @@ Resultados (P)
 
 Conclusão (P)
 
-	Durante esta apresentação fizemos uma exposição de como o Push-Sum Protocol funcionava para o cálculo de funções de agregação, como o simulador implementado nos ajudou a testar o algoritmo e uma análise dos resultado obtidos para diferentes condições de simulação.
+	Durante esta apresentação fizemos uma exposição de como o Push-Sum Protocol funcionava como o simulador implementado nos ajudou a testar o algoritmo e uma análise dos resultado obtidos para diferentes condições de simulação.
 	De destacar que os teste feitos poderiam ter sido um pouco mais abrangentes, nomeadamente podiamos ter utilizado topologias diferentes e redes com um número de nodos muito superior.
