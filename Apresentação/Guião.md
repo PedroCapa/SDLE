@@ -15,10 +15,12 @@ Decisão (P)
 
 Protocolo (L)
 
-	O Push-Sum Protocol permite o cálculo das funções SUM, COUNT e AVERAGE, através da atribuição de um par de valores (s, w) a todos os nodos e dependendo desses valores é possível calcular uma destas funções de agregação.
+	O Push-Sum Protocol permite o cálculo das funções SUM, COUNT e AVERAGE, através da atribuição de um par de valores (s, w) a todos os nodos e dependendo dos valores inicialmente atribuídos é possível calcular uma destas funções de agregação.
 	O s representa a soma dos valores trocados e o w o peso associado à soma.
 
-	De forma a calcular o valor das funções, cada nodo num determinado intervalo de tempo envia metade dos seus valores a um vizinho aleatório e a outra metade fica para si mesmo.
+	O algoritmo é bastante simples e funciona da seguinte forma:
+
+	Cada nodo num determinado intervalo de tempo envia metade dos seus valores a um vizinho aleatório e a outra metade fica para si mesmo.
 	
 	Quando um nodo recebe uma mensagem, soma os pesos que recebeu na mensagem aos pesos que tinha guardado. 
 	
@@ -26,23 +28,23 @@ Protocolo (L)
 	
 	A soma dos pesos na rede têm de ser constante para que a haja convergência, esta é uma propriedade indispensável.
 	
-	As principais vantagens deste algoritmo consistem no facto dos cálculos efetuados em cada nodo serem muito reduzidos e funcionar para qualquer topologia.
+	As principais vantagens deste algoritmo consistem no facto dos cálculos efetuados serem muito reduzidos e funcionar para qualquer topologia.
 	
 	Por outro lado, o tempo para convergir depende do tamanho e topologia da rede e se houver a falha de um nodo é provável que o resultado não convirja.
 
 Implementação (L)
 
-	Inicialmente foi implementado o algoritmo tal como tinha sido descrito em que foi assumido que não haveria perda de mensagens nem troca da estrutura da rede.
+	Inicialmente implementamos o algoritmo tal como tinha sido descrito em que foi assumido que não haveria perda de mensagens nem troca da estrutura da rede.
 
 	Para tal, era apenas necessário criar dois tipos de eventos, um que enviasse os pesos para um vizinho aleatório, o gossip, e um outro evento, o iterator, que em determinados períodos originava eventos gossip.
 
-	Como o objetivo de cada gossip passava por enviar os pesos para apenas um vizinho e não para toda a rede, então consideradomos que cada mensagem tinha um target, que não era alterado, mesmo que a mensagem fosse perdida ou a estrutura da rede fosse alterada.
+	Como o objetivo de cada gossip passava por enviar os pesos para apenas um vizinho e não para toda a rede, então consideradomos que cada mensagem tinha um target, que não era alterado, mesmo que a mensagem fosse perdida ou a estrutura da rede alterada.
 
 	Para tornar o algoritmo mais completo teríamos de o tornar imune à perda de mensagens e à alteração da rede.
 
 	Esta alteração implicou que fosse gerado um evento collector sempre que uma mensagem gossip fosse enviada, que ao fim de um determinado timeout enviava uma mensagem ihave a todos os vizinhos, caso não tenha conhecimento que o target tenha recebido a mensagem.
 
-	O nodo que recebia um ihave, originava um evento schedule, que passado um determinado timeout, caso o nodo não soubesse que o target da mensagem já a tinha recebido, ia enviar um request a um vizinho que tinha os dados.
+	O nodo que recebia um ihave, originava um evento schedule, que passado um determinado timeout, caso não soubesse que o target da mensagem já a tinha recebido, ia enviar um request a um vizinho que tinha os dados.
 
 	Para propagar pela rede o conhecimento de cada nodo e criar um garbage collector para eliminar dados desnecessárias criamos os eventos wehave, que consistia no envio dos ids que cada nodo conhecia.
 
@@ -58,7 +60,7 @@ Simulador (L)
 
 	Na elaboração do simulador decidimos implementar algumas funcionalidades, nomeadamente, a perda de mensagens entre nodos de forma aleatória, a reconstrução da rede em intervalos de tempo fixos, a contagem do número de mensagens enviadas e perdidas e o suporte para todos os tipos de eventos do protocolo.
 
-	Uma outra funcionalidade que implementamos foram os snapshots, que permitia ao simulador guardar os valores de cada nodo de forma a verificar se o algoritmo estava com a tendência em convergir e consequentemente, se estava a ser eficaz.
+	Uma outra funcionalidade que implementamos foram os snapshots, que permitia ao simulador guardar os valores de cada nodo de forma a verificar se o algoritmo estava com a tendência para convergir.
 
 Papel do Simulador (P)
 
@@ -86,6 +88,7 @@ Resultados (P)
 
 	Este gráfico mostra a evolução dos valores dos pesos dos nodos para a função de agregação COUNT, para um grafo com ligações aleatórias, com probabilidade de perda de mensagens de 0.3 e o erro de terminação de 1% e com 30 nodos.
 	Como podemos ver no final da simulação todos os pesos dos nodos estão próximos do resultado desejado, perto de 30.
+-------------------------------------------------- Trocar Slide -----------------------------------------------------
 
 	O gráfico da esquerda mostra o tempo médio necessário para convergir, já o da direita mostra o número médio de mensagens trocadas até convergir.
 	
@@ -96,4 +99,6 @@ Resultados (P)
 Conclusão (P)
 
 	Durante esta apresentação fizemos uma exposição de como o Push-Sum Protocol funcionava para o cálculo de funções de agregação, como o simulador implementado nos ajudou a testar o algoritmo e uma análise dos resultado obtidos para diferentes condições de simulação.
+	Tal como era previsto, o Push-Sum Protocol consegue obter o resultado correto, no entanto é necessário algum tempo para o obter.
 	De destacar que os teste feitos poderiam ter sido um pouco mais abrangentes, nomeadamente podiamos ter utilizado topologias diferentes e redes com um número de nodos muito superior.
+
